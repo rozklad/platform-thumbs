@@ -58,18 +58,19 @@ class ThumbsMacro extends AbstractMacro implements MacroInterface
         if ($file->isImage()) {
             $path = $this->getPath($file, $media);
 
-            // Update the media entry
-            //$media->thumbnail = str_replace(public_path(), null, $path);
-            //$media->save();
-
             // Create the thumbnail
-            $image = $this->intervention->make($file->getContents())
-                ->resize(null, $this->style->width, function ($constraint) {
+            $image = $this->intervention->make($file->getContents());
+
+            if ( $this->style->width )
+            {
+                $image->resize(null, $this->style->width, function ($constraint)
+                {
                     $constraint->aspectRatio();
                     $constraint->upsize();
                 });
-            file_put_contents(__DIR__ . '/come.txt', $path);
-            Storage::disk('s3')->put($path, $image->getEncoded());
+            }
+
+            Storage::disk('s3')->put(str_replace(public_path(), null, $path), $image->getEncoded());
         }
     }
 

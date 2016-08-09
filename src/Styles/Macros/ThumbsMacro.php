@@ -70,40 +70,13 @@ class ThumbsMacro extends AbstractMacro implements MacroInterface
                 });
             }
 
-            $image->encode($extension = self::getExtension($media));
+            $image->encode($extension = mime2Extension($media->mime));
 
             Storage::disk('s3')->put(
                 str_replace(public_path(), null, $path),
                 $image->getEncoded()
             );
         }
-    }
-
-    public static function getExtension($media)
-    {
-        $extension = '';
-
-        // If there is no extension, let's give it one
-        switch ($media->mime) {
-            case 'image/jpeg':
-                $extension = 'jpg';
-                break;
-
-            case 'image/png':
-                $extension = 'png';
-                break;
-
-            case 'image/gif':
-                $extension = 'gif';
-                break;
-
-            case 'image/bmp':
-                $extension = 'bmp';
-                break;
-
-        }
-
-        return $extension;
     }
 
     /**
@@ -130,7 +103,7 @@ class ThumbsMacro extends AbstractMacro implements MacroInterface
 
         $name = Str::slug(implode('-', [ $width, $height ?: $width ]));
 
-        $extension = self::getExtension($media);
+        $extension = mime2Extension($media->mime);
 
         return "{$this->style->path}/{$media->id}_{$name}.{$extension}";
     }

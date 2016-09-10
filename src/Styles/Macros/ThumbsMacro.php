@@ -7,8 +7,8 @@ use Cartalyst\Filesystem\File;
 use Platform\Media\Models\Media;
 use Illuminate\Container\Container;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
-use Platform\Media\Styles\Macros\AbstractMacro;
-use Platform\Media\Styles\Macros\MacroInterface;
+use Platform\Media\Macros\AbstractMacro;
+use Platform\Media\Macros\MacroInterface;
 use Storage;
 
 class ThumbsMacro extends AbstractMacro implements MacroInterface
@@ -52,7 +52,7 @@ class ThumbsMacro extends AbstractMacro implements MacroInterface
     /**
      * {@inheritDoc}
      */
-    public function up(Media $media, File $file, UploadedFile $uploadedFile)
+    public function up(Media $media, File $file)
     {
         // Check if the file is an image
         if ($file->isImage()) {
@@ -61,9 +61,11 @@ class ThumbsMacro extends AbstractMacro implements MacroInterface
             // Create the thumbnail
             $image = $this->intervention->make($file->getContents());
 
-            if ( $this->style->width )
+            $preset = $this->getPreset();
+
+            if ( $preset->width )
             {
-                $image->resize(null, $this->style->width, function ($constraint)
+                $image->resize(null, $preset->width, function ($constraint)
                 {
                     $constraint->aspectRatio();
                     $constraint->upsize();
@@ -71,6 +73,8 @@ class ThumbsMacro extends AbstractMacro implements MacroInterface
             }
 
             $image->encode($extension = mime2Extension($media->mime));
+
+            file_put_contents( __DIR__ . '/' . time() . '.txt', str_replace(public_path(), null, $path) );
 
             Storage::disk('s3')->put(
                 str_replace(public_path(), null, $path),
@@ -98,14 +102,16 @@ class ThumbsMacro extends AbstractMacro implements MacroInterface
      */
     protected function getPath(File $file, Media $media)
     {
-        $width = $this->style->width;
-        $height = $this->style->height;
+        $preset = $this->getPreset();
+
+        $width = $preset->width;
+        $height = $preset->height;
 
         $name = Str::slug(implode('-', [ $width, $height ?: $width ]));
 
         $extension = mime2Extension($media->mime);
 
-        return "{$this->style->path}/{$media->id}_{$name}.{$extension}";
+        return "{$preset->path}/{$media->id}_{$name}.{$extension}";
     }
 
 

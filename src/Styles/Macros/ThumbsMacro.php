@@ -74,8 +74,6 @@ class ThumbsMacro extends AbstractMacro implements MacroInterface
 
             $image->encode($extension = mime2Extension($media->mime));
 
-            file_put_contents( __DIR__ . '/' . time() . '.txt', str_replace(public_path(), null, $path) );
-
             Storage::disk('s3')->put(
                 str_replace(public_path(), null, $path),
                 $image->getEncoded()
